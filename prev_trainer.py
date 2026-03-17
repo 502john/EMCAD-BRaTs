@@ -16,37 +16,28 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torch.cuda.amp import GradScaler, autocast
 
-from utils.dataset_brats import BraTS_dataset, RandomGenerator
+from utils.dataset_synapse import Synapse_dataset, RandomGenerator
 from utils.utils import powerset, one_hot_encoder, DiceLoss, val_single_volume
             
 def inference(args, model, best_performance):
-
-    # We may have to change this test_vol -> vol
-    db_test = BraTS_dataset(base_dir=args.volume_path, split="test_vol", list_dir=args.list_dir, nclass=args.num_classes)
+    db_test = Synapse_dataset(base_dir=args.volume_path, split="test_vol", list_dir=args.list_dir, nclass=args.num_classes)
     
     testloader = DataLoader(db_test, batch_size=1, shuffle=False, num_workers=1)
     logging.info("{} test iterations per epoch".format(len(testloader)))
     model.eval()
     metric_list = 0.0
     for i_batch, sampled_batch in tqdm(enumerate(testloader)):
-
-        # This is cooked 
-        # h, w = sampled_batch["image"].size()[2:]
+        h, w = sampled_batch["image"].size()[2:]
         image, label, case_name = sampled_batch["image"], sampled_batch["label"], sampled_batch['case_name'][0]
         metric_i = val_single_volume(image, label, model, classes=args.num_classes, patch_size=[args.img_size, args.img_size],
                                       case=case_name, z_spacing=args.z_spacing)
         metric_list += np.array(metric_i)
     metric_list = metric_list / len(db_test)
-
-    # This could be a point of failure
-    # performance = np.mean(metric_list, axis=0)
-    performance = np.mean(metric_list)
-
-
+    performance = np.mean(metric_list, axis=0)
     logging.info('Testing performance in val model: mean_dice : %f, best_dice : %f' % (performance, best_performance))
     return performance
 
-def trainer_brats(args, model, snapshot_path):
+def trainer_synapse(args, model, snapshot_path):
     logging.basicConfig(filename=snapshot_path + "/log.txt", level=logging.INFO,
                         format='[%(asctime)s.%(msecs)03d] %(message)s', datefmt='%H:%M:%S')
     logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
@@ -55,7 +46,7 @@ def trainer_brats(args, model, snapshot_path):
     num_classes = args.num_classes
     batch_size = args.batch_size * args.n_gpu
     
-    db_train = BraTS_dataset(base_dir=args.root_path, list_dir=args.list_dir, split="train", nclass=args.num_classes,
+    db_train = Synapse_dataset(base_dir=args.root_path, list_dir=args.list_dir, split="train", nclass=args.num_classes,
                                transform=transforms.Compose(
                                    [RandomGenerator(output_size=[args.img_size, args.img_size])]))
     
@@ -64,7 +55,7 @@ def trainer_brats(args, model, snapshot_path):
     def worker_init_fn(worker_id):
         random.seed(args.seed + worker_id)
 
-    trainloader = DataLoader(db_train, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True,
+    trainloader = DataLoader(db_train, batch_size=batch_size, shuffle=True, num_workers=8, pin_memory=True,
                              worker_init_fn=worker_init_fn)
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

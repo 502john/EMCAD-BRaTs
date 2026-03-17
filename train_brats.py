@@ -8,20 +8,21 @@ import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
 from lib.networks import EMCADNet
-from prev_trainer import trainer_synapse
+from trainer import trainer_brats
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--root_path', type=str,
-                    default='./data/synapse/train_npz', help='root dir for data')
+                    default='./data/brats/train_npz', help='root dir for data')
 parser.add_argument('--volume_path', type=str,
-                    default='./data/synapse/test_vol_h5', help='root dir for validation volume data')
+                    default='./data/brats/test_vol_h5', help='root dir for validation volume data')
 parser.add_argument('--dataset', type=str,
-                    default='Synapse', help='experiment_name')
+                    default='Brats', help='experiment_name')
 parser.add_argument('--list_dir', type=str,
-                    default='./lists/lists_Synapse', help='list dir')
+                    # ids is reserved for storing the preprocessing split ids
+                    default='./lists/brats/splits', help='list dir')
 parser.add_argument('--num_classes', type=int,
-                    default=9, help='output channel of network')
+                    default=4, help='output channel of network')
 # network related parameters
 parser.add_argument('--encoder', type=str,
                     default='pvt_v2_b2', help='Name of encoder: pvt_v2_b2, pvt_v2_b0, resnet18, resnet34 ...')
@@ -45,11 +46,11 @@ parser.add_argument('--supervision', type=str,
                     default='mutation', help='loss supervision: mutation, deep_supervision or last_layer')
 
 parser.add_argument('--max_iterations', type=int,
-                    default=50000, help='maximum epoch number to train')
+                    default=500000, help='maximum epoch number to train')
 parser.add_argument('--max_epochs', type=int,
-                    default=300, help='maximum epoch number to train')
+                    default=40, help='maximum epoch number to train')
 parser.add_argument('--batch_size', type=int,
-                    default=6, help='batch_size per gpu')
+                    default=16, help='batch_size per gpu')
 parser.add_argument('--base_lr', type=float,  default=0.0001,
                     help='segmentation network learning rate')
 parser.add_argument('--img_size', type=int,
@@ -77,7 +78,7 @@ if __name__ == "__main__":
     
     dataset_name = args.dataset
     dataset_config = {
-        'Synapse': {
+        'Brats': {
             'root_path': args.root_path,
             'volume_path': args.volume_path,
             'list_dir': args.list_dir,
@@ -123,5 +124,5 @@ if __name__ == "__main__":
 
     print('Model successfully created.')
     
-    trainer = {'Synapse': trainer_synapse,}
+    trainer = {'Brats': trainer_brats,}
     trainer[dataset_name](args, model, snapshot_path)
