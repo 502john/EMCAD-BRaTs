@@ -10,7 +10,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from utils.dataset_brats import Brats_dataset
+from utils.dataset_brats import BraTS_dataset
 from utils.utils import test_single_volume
 
 from lib.networks import EMCADNet
@@ -50,7 +50,7 @@ parser.add_argument('--supervision', type=str,
                     default='mutation', help='loss supervision: mutation, deep_supervision or last_layer')
 
 parser.add_argument('--max_iterations', type=int,default=500000, help='maximum epoch number to train')
-parser.add_argument('--max_epochs', type=int, default=40, help='maximum epoch number to train')
+parser.add_argument('--max_epochs', type=int, default=20, help='maximum epoch number to train')
 parser.add_argument('--batch_size', type=int, default=16,
                     help='batch_size per gpu')
 parser.add_argument('--base_lr', type=float,  default=0.0001, help='segmentation network learning rate')

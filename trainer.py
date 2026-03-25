@@ -142,7 +142,12 @@ def trainer_brats(args, model, snapshot_path):
         save_mode_path = os.path.join(snapshot_path, 'last.pth')
         torch.save(model.state_dict(), save_mode_path)
         
-        performance = inference(args, model, best_performance)
+        # performance = inference(args, model, best_performance)
+        if epoch_num % 5 == 0:
+            performance = inference(args, model, best_performance)
+        else:
+            performance = best_performance 
+
         
         save_interval = 50
 

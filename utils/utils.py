@@ -219,11 +219,22 @@ def test_single_volume(image, label, net, classes, patch_size=[256, 256], test_s
                 for i in range(1, classes):
                     preds_o.append(pred==i)
                 
-                fig_gt = overlay_masks(image[ind, :, :], masks, labels=mask_labels, colors=cmap, mask_alpha=0.5)
-                fig_pred = overlay_masks(image[ind, :, :], preds_o, labels=mask_labels, colors=cmap, mask_alpha=0.5)
+                # Currently, slice[0] is 224. pred & label is 240, zoom slice[0]to 240
+                # This is upsampling
+                if x != patch_size[0] or y != patch_size[1]:
+                    display = zoom(slice[0], (x / patch_size[0], y / patch_size[1]), order=3)
+                else:
+                    display = slice[0]
+
+                fig_gt = overlay_masks(display, masks, labels=mask_labels, colors=cmap, mask_alpha=0.5)
+                fig_pred = overlay_masks(display, preds_o, labels=mask_labels, colors=cmap, mask_alpha=0.5)
                 # Do with that image whatever you want to do.
                 fig_gt.savefig(test_save_path + '/' + case + '_' +str(ind) + '_gt.png', bbox_inches="tight", dpi=300)
                 fig_pred.savefig(test_save_path + '/' + case + '_' +str(ind) + '_pred.png', bbox_inches="tight", dpi=300)
+
+                # Stop warning for multiple plots being open and consuming memory
+                plt.close(fig_gt)
+                plt.close(fig_pred)
 
     # else:
     #     input = torch.from_numpy(image).unsqueeze(
